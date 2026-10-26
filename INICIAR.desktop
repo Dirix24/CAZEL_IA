@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=CAZEL IA
+Comment=IA portátil en USB
+Exec=sh -c 'cd "$(dirname "%k")" && sh ./INICIAR.sh'
+Terminal=true
+Icon=utilities-terminal
+Categories=Development;

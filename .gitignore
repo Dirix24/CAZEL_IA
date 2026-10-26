@@ -1,0 +1,6 @@
+datos/*
+!datos/.gitkeep
+libs/
+python_portatil/
+__pycache__/
+*.pyc

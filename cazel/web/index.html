@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="cazel-token" content="__TOKEN__">
+<title>CAZEL IA</title>
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<header class="barra">
+  <div class="marca">
+    <span class="logo" aria-hidden="true">C</span>
+    <div class="marca-texto"><strong>CAZEL IA</strong><span id="sub">cargando…</span></div>
+  </div>
+  <div class="chips" id="chips" aria-live="polite"></div>
+  <button id="btn-parar" class="parar oculto" title="Parada de emergencia del robot">PARAR</button>
+  <div class="menu-caja">
+    <button id="btn-menu" class="icono" aria-haspopup="true" aria-expanded="false" aria-label="Más opciones">⋮</button>
+    <ul id="menu" class="menu oculto" role="menu">
+      <li role="none"><button role="menuitem" data-panel="robotica">🔌 Escanear placas y componentes</button></li>
+      <li role="none"><button role="menuitem" data-panel="proyecto">🧩 Analizar código y proyectos</button></li>
+      <li role="none"><button role="menuitem" data-panel="codigo">🤖 Adaptar sketch Arduino</button></li>
+      <li role="none"><button role="menuitem" data-panel="github">🐙 Repositorio GitHub</button></li>
+      <li role="none"><button role="menuitem" data-panel="internet">🌐 Internet y biblioteca</button></li>
+      <li role="none"><button role="menuitem" data-panel="espacio">💾 Espacio del USB</button></li>
+      <li role="none"><button role="menuitem" data-panel="diario">📓 Diario y entrenamiento</button></li>
+      <li role="none"><button role="menuitem" data-panel="ayuda">❓ Ayuda</button></li>
+      <li role="none" class="sep"><button role="menuitem" data-panel="apagar">⏻ Apagar CAZEL</button></li>
+    </ul>
+  </div>
+</header>
+
+<main class="chat">
+  <div id="mensajes" class="mensajes" aria-live="polite"></div>
+  <form id="form" class="entrada" autocomplete="off">
+    <input id="texto" type="text" maxlength="4000" placeholder="Escribe aquí… (/ayuda muestra los comandos)" aria-label="Mensaje">
+    <button type="submit">Enviar</button>
+  </form>
+</main>
+
+<dialog id="panel"><div id="panel-contenido"></div></dialog>
+<script src="/app.js"></script>
+</body>
+</html>
