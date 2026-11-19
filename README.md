@@ -105,6 +105,35 @@ Si el espacio escasea, CAZEL limpia cachés regenerables. Por debajo de 20 MB li
 
 Puedes añadir diálogos revisados a `cerebro/data/corpus/` y entrenar el modelo ejecutando `python3 train.py` desde la carpeta `cerebro/`. Los ejemplos pueden mejorar respuestas sobre esos temas, pero este Cerebro pequeño no se convierte por ello en un modelo universal. Conserva una copia de seguridad y revisa las métricas del entrenamiento.
 
+## Modo híbrido opcional (Ollama / LM Studio)
+
+CAZEL funciona sin internet con su modelo integrado. Si instalas y arrancas
+un motor compatible con la API de chat de OpenAI **en el mismo ordenador**,
+puedes activar la conversación híbrida en `datos/ajustes.json`:
+
+```json
+{
+  "motor_externo": {
+    "activo": true,
+    "auto_chat": true,
+    "host": "http://127.0.0.1:11434/v1",
+    "modelo": "NOMBRE_DEL_MODELO"
+  }
+}
+```
+
+Sustituye `NOMBRE_DEL_MODELO` por el modelo que realmente tengas instalado.
+El motor está **desactivado por defecto**; no se descarga ni instala nada
+automáticamente. El chat normal usa el motor local cuando está disponible y
+recurre al modelo integrado si la consulta falla. Los comandos de seguridad
+y control de robots siguen pasando por CAZEL, no por el modelo externo.
+Puedes establecer `auto_chat: false` para mantener el chat integrado y
+utilizar el motor externo solo con `/consulta pregunta`.
+
+La conexión solo permite direcciones HTTP locales y no sigue redirecciones.
+No hay garantía de que un modelo externo genere instrucciones correctas:
+revisa siempre el código y las órdenes antes de aplicarlos al hardware.
+
 ## Pruebas
 
 ```
