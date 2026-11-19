@@ -22,6 +22,13 @@ import urllib.request
 
 LOCALES = {"127.0.0.1", "localhost", "::1"}
 MAX_RESPUESTA = 1_000_000
+
+
+class _SinRedirecciones(urllib.request.HTTPRedirectHandler):
+    """No seguir redirecciones: un servidor local no debe reenviar datos fuera."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        raise ErrorMotor("El motor local intentó redirigir la petición; se ha bloqueado.")
 SISTEMA = ("Eres CAZEL IA, un asistente que ayuda a una persona que está aprendiendo a programar "
            "y a construir robots con Arduino. Responde en español, con frases cortas y claras, "
            "explica paso a paso y no des por hecho que ya sabe términos técnicos.")
@@ -37,7 +44,7 @@ def validar_host(host):
         _ = p.port
     except ValueError:
         raise ErrorMotor("La dirección del motor no es válida.")
-    if p.scheme != "http" or (p.hostname or "").lower() not in LOCALES or p.username or p.password:
+    if p.scheme != "http" or (p.hostname or "").lower() not in LOCALES or p.username or p.password or p.query or p.fragment:
         raise ErrorMotor("Solo se admiten motores en este mismo equipo (http://127.0.0.1:...).")
     return str(host).rstrip("/")
 
@@ -66,7 +73,8 @@ def consultar(ajustes, pregunta, contexto="", abridor=None):
         if abridor is not None:
             bruto = abridor(req)
         else:
-            with urllib.request.urlopen(req, timeout=float(ajustes.get("timeout_segundos", 120))) as r:
+            with urllib.request.build_opener(_SinRedirecciones).open(
+                    req, timeout=float(ajustes.get("timeout_segundos", 120))) as r:
                 bruto = r.read(MAX_RESPUESTA + 1)
         if len(bruto) > MAX_RESPUESTA:
             raise ErrorMotor("La respuesta del motor es demasiado grande.")
