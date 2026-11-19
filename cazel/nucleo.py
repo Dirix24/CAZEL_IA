@@ -176,6 +176,16 @@ class Cazel:
             fn = self._COMANDOS.get(cmd)
             if fn is not None:
                 return fn(self, resto), False
+        # Modo híbrido: si el motor local opcional está disponible, úsalo para
+        # conversación normal. Si falla, conserva el chat integrado offline.
+        externo = self.ajustes.get("motor_externo", {})
+        if externo.get("activo") and externo.get("auto_chat", True):
+            try:
+                respuesta = motor_externo.consultar(externo, texto)
+                if respuesta:
+                    return respuesta, False
+            except motor_externo.ErrorMotor as e:
+                self.auditoria.registrar("motor_externo_no_disponible", motivo=str(e)[:200])
         return self.conversacion.procesar(texto)
 
     # -- comandos ---------------------------------------------------------------------------------
