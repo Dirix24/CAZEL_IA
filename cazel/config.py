@@ -83,6 +83,7 @@ AJUSTES_POR_DEFECTO = {
     # equipo (127.0.0.1). Apagado por defecto.
     "motor_externo": {
         "activo": False,
+        "auto_chat": True,  # con motor activo, conversación híbrida y respaldo offline
         "host": "http://127.0.0.1:11434/v1",
         "modelo": "",
         "timeout_segundos": 120,
