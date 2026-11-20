@@ -120,3 +120,9 @@ datos/       TODO lo que CAZEL escribe (memoria, diario, cuarentena, ...)
 ejemplos/    sketch y adaptador de ejemplo
 tests/       pruebas
 ```
+
+## Licencia
+
+El código original de CAZEL IA y Cerebro se distribuye bajo la [licencia MIT](LICENSE).
+El contenido de terceros, incluidos los textos consultados en Wikipedia, conserva
+la licencia y la atribución de su fuente.
