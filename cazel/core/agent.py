@@ -2,9 +2,9 @@
 
 from dataclasses import dataclass
 import fnmatch
+import hashlib
 import json
 import os
-from pathlib import Path
 import shutil
 import subprocess
 import threading
@@ -65,17 +65,30 @@ def git_status(ws):
     env = {"PATH": os.defpath, "GIT_CONFIG_NOSYSTEM": "1", "GIT_CONFIG_GLOBAL": os.devnull,
            "GIT_OPTIONAL_LOCKS": "0", "GIT_TERMINAL_PROMPT": "0",
            "SYSTEMROOT": os.environ.get("SYSTEMROOT", "")}
-    res = subprocess.run([git, "-c", "core.fsmonitor=false", "-c", "core.hooksPath=" + os.devnull,
-                          "-c", "core.untrackedCache=false", "status", "--porcelain=v1",
-                          "--untracked-files=no", "--ignore-submodules=all"],
+    res = subprocess.run([git, "-c", "core.fsmonitor=false", "ls-files", "--cached", "--stage", "-z"],
                          cwd=ws.root, env=env, timeout=5, capture_output=True, check=True)
-    return "\n".join(line for line in res.stdout[:16000].decode("utf-8", "replace").splitlines()
-                     if all(visible_git_path(p) for p in line[3:].split(" -> ")))
-
-
-def visible_git_path(name):
-    from .workspace import visible
-    return '"' not in name and all(visible(piece) for piece in name.split("/"))
+    tracked = set()
+    changes = []
+    for record in res.stdout.split(b"\0")[:3000]:
+        try:
+            meta, name = record.decode("utf-8").split("\t", 1)
+            mode, digest, stage = meta.split()
+            if stage != "0" or mode not in {"100644", "100755"}:
+                continue
+            ws.path(name)
+            tracked.add(name)
+            src = ws.read(name, missing=True)
+            if src is None:
+                changes.append(["deleted", name])
+                continue
+            raw = src.encode("utf-8")
+            method = hashlib.sha1 if len(digest) == 40 else hashlib.sha256
+            if method(b"blob " + str(len(raw)).encode() + b"\0" + raw).hexdigest() != digest:
+                changes.append(["modified", name])
+        except (OSError, ValueError):
+            continue
+    changes.extend(["untracked", p] for p in ws.files() if p not in tracked)
+    return {"comparison": "working_tree_vs_index_raw", "files": changes[:100]}
 
 
 class Agent:
@@ -100,7 +113,7 @@ class Agent:
     def tests(self, session, ws, task, profile):
         if task.cancel.is_set():
             raise ValueError("Tarea cancelada.")
-        result = run_tests(ws.root, profile, task.testing, task.cancel,
+        result = run_tests(ws, profile, task.testing, task.cancel,
                            timeout=max(0.1, min(30, task.deadline - time.monotonic())))
         self.store.event(session, "test", **result)
         return result

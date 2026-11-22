@@ -1,2 +1,2 @@
 #!/bin/sh
-exec "$(dirname "$0")/INICIAR.sh" --interfaz studio "$@"
+exec sh "$(dirname "$0")/INICIAR.sh" --interfaz studio "$@"
