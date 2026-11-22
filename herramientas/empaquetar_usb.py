@@ -34,13 +34,20 @@ def main():
         source = Path(temp) / "fuentes.zip"
         subprocess.run(["git", "archive", "-o", str(source), "HEAD"], cwd=ROOT, check=True)
         shutil.unpack_archive(source, staging)
+        if os.name != "nt":
+            for launcher in staging.glob("CAZEL_*.sh"):
+                launcher.chmod(0o755)
         shutil.copytree(runtime, staging / "python_portatil", symlinks=False)
         shutil.copytree(libs, staging / "libs", symlinks=False)
         python = staging / "python_portatil" / interpreter
-        subprocess.run([str(python), "-c", "import cazel.config; import numpy; import serial; import sqlite3"],
-                       cwd=staging, check=True)
-        subprocess.run([str(python), "iniciar.py", "--interfaz", "terminal"], input="/exit\n",
-                       text=True, cwd=staging, check=True)
+        imports = ("import sys; sys.path.insert(0, '.'); "
+                   "import cazel.config, numpy, serial, sqlite3")
+        env = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1",
+               "PYTHONNOUSERSITE": "1", "PYTHONPATH": "", "PYTHONHOME": ""}
+        env.pop("CAZEL_DATOS", None)
+        subprocess.run([str(python), "-B", "-c", imports], cwd=staging, env=env, check=True)
+        subprocess.run([str(python), "-B", "iniciar.py", "--interfaz", "terminal"], input="/exit\n",
+                       text=True, cwd=staging, env=env, check=True)
         database = staging / "datos" / "core2.sqlite3"
         database.unlink(missing_ok=True)
         staging.rename(destination)
