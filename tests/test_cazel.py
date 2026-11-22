@@ -18,6 +18,7 @@ import tempfile
 import threading
 import time
 import unittest
+from unittest.mock import patch
 import urllib.request
 
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -1015,6 +1016,35 @@ class TestServidor(Base):
         self.assertIn("CAZEL 1", d["sketch"])
         self.assertEqual(self.api("codigo_adaptador", {"codigo": CODIGO, "nombre": "Mal Nombre"})[0], 400)
         self.assertEqual(self.api("codigo_analizar", {"codigo": ""})[0], 400)
+
+    def test_parada_independiente_de_una_tarea_activa(self):
+        self.assertTrue(self.api("robots_conectar", {"puerto": "simulado"})[1]["conectado"])
+        robot = self.cazel.robots._tr
+        proyecto = tmp()
+        self.addCleanup(shutil.rmtree, proyecto, True)
+        _, opened = self.api("core2/open", {"path": proyecto})
+        data = {"session": opened["session"]}
+        started, release = threading.Event(), threading.Event()
+
+        def model(*args):
+            started.set()
+            release.wait(5)
+            return '{"tool":"finish","args":{"summary":"Fin de la prueba"}}', "offline"
+
+        with patch.object(self.srv.studio.agent.router, "chat", side_effect=model):
+            try:
+                self.assertEqual(self.api("core2/start", {**data, "prompt": "Revisa el proyecto"})[0], 200)
+                self.assertTrue(started.wait(3))
+                self.assertTrue(self.api("core2/status", data)[1]["active"])
+                self.assertEqual(self.api("robots_parar")[0], 200)
+                self.assertEqual(robot.historial[-1], "PARAR")
+                self.assertTrue(self.api("core2/status", data)[1]["active"])
+            finally:
+                release.set()
+                deadline = time.monotonic() + 3
+                while self.api("core2/status", data)[1]["active"] and time.monotonic() < deadline:
+                    time.sleep(0.05)
+            self.assertFalse(self.api("core2/status", data)[1]["active"])
 
     def test_apagar_envia_parar_al_robot(self):
         self.api("robots_conectar", {"puerto": "simulado"})
