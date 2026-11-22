@@ -208,6 +208,18 @@ class Core2(unittest.TestCase):
         self.call("undo", id=self.call("changes")[0]["id"])
         self.assertEqual(self.ws.read("calculadora.py"), CALCULATOR)
 
+    def test_no_tests_overrides_unverified_model_claim(self):
+        replies = [
+            ('{"tool":"run_tests","args":{"profile":"python-unittest"}}', "offline"),
+            ('{"tool":"finish","args":{"summary":"Han pasado todas las pruebas."}}', "offline"),
+        ]
+        task = Task(threading.Event(), time.monotonic() + 5, "trusted")
+        with patch.object(self.ui.agent.router, "chat", side_effect=replies):
+            outcome = self.ui.agent.run(self.session, "Comprueba las pruebas", task, None)
+        self.assertEqual(outcome["state"], "failed")
+        self.assertEqual(outcome["summary"], "No se descubrieron pruebas.")
+        self.assertIn("Han pasado", self.ui.store.history(self.session)[-1]["model_summary"])
+
     def test_cancellation_before_model(self):
         cancel = threading.Event()
         cancel.set()

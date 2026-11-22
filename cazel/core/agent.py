@@ -205,6 +205,8 @@ class Agent:
                           ensure_ascii=False)
         transcript = []
         verification = "unverified"
+        test_state = None
+        model_summary = None
         state, summary = "limited", "Se alcanzó el límite de iteraciones."
         try:
             for _ in range(steps):
@@ -224,13 +226,17 @@ class Agent:
                 try:
                     name, args = decode_tool(raw)
                     if name == "finish":
-                        summary = args["summary"]
+                        summary = model_summary = args["summary"]
                         state = {"passed": "verified", "failed": "failed",
                                  "pending": "pending", "unverified": "unverified"}[verification]
+                        if state == "failed":
+                            summary = ("No se descubrieron pruebas." if test_state == "no_tests"
+                                       else "La última ejecución de pruebas no terminó correctamente.")
                         break
                     result = self.act(session, ws, task, name, args, approval)
                     if name == "run_tests":
-                        verification = "passed" if result["state"] == "passed" else "failed"
+                        test_state = result["state"]
+                        verification = "passed" if test_state == "passed" else "failed"
                     elif name in {"write_file", "apply_patch"} and result["state"] in {"pending", "applied"}:
                         verification = "pending" if result["state"] == "pending" else "unverified"
                     self.store.event(session, "tool", name=name, ok=True)
@@ -253,5 +259,8 @@ class Agent:
                                        for c in self.store.changes(session)):
             state = "pending"
         outcome = {"state": state, "summary": summary, "verification": verification}
-        self.store.event(session, "result", **outcome)
+        if model_summary is not None and model_summary != summary:
+            self.store.event(session, "result", **outcome, model_summary=model_summary)
+        else:
+            self.store.event(session, "result", **outcome)
         return outcome
