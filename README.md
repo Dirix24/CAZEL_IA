@@ -7,6 +7,16 @@ pides, investiga en Wikipedia con permiso y se conecta a robots serie compatible
 Cerebro es su mente (el modelo hecho con NumPy) y las ideas de seguridad de
 Arquitectura-Arus son su cuerpo (permisos, registro, límites).
 
+## CAZEL Core 2
+
+CAZEL Terminal y CAZEL Studio comparten proyectos, sesiones y cambios
+reversibles. Ambos pueden conectarse a un modelo local o a un proveedor
+remoto autorizado. Arranca con `CAZEL_TERMINAL` o `CAZEL_STUDIO` para tu
+sistema. Consulta la [guía de uso y preparación USB](docs/CAZEL_2_USO.md)
+para configurar el modelo, los permisos y los perfiles de pruebas.
+
+Las secciones siguientes describen la interfaz clásica y la robótica.
+
 ## Cómo usarlo
 
 1. Copia la carpeta `CAZEL_IA` entera al USB.
