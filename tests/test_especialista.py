@@ -21,3 +21,28 @@ class Especialista(unittest.TestCase):
                 request["accion"] = "probar"
                 self.assertEqual(coordinar(request, project)["estado"], "no_disponible")
                 runner.assert_not_called()
+
+    def test_propuesta_pendiente_no_escribe_archivos(self):
+        import json
+
+        from cazel.core.interface import Interface
+
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            project = root / "proyecto"
+            datos = root / "datos"
+            project.mkdir()
+            datos.mkdir()
+            (datos / "ajustes.json").write_text('{"motor_externo":{"activo":true}}')
+            peticion = {"version": 1, "accion": "proponer", "objetivo": "Escribe demo.py"}
+            self.assertEqual(coordinar(peticion, project)["estado"], "no_disponible")
+            respuestas = [
+                (json.dumps({"tool": "write_file", "args": {"path": "demo.py", "content": "x = 1\n"}}), "offline"),
+                (json.dumps({"tool": "finish", "args": {"summary": "Propuesto"}}), "offline"),
+            ]
+            with patch("cazel.core.models.Router.chat", side_effect=respuestas):
+                informe = coordinar(peticion, project, permitir_propuestas=True, datos=datos)
+            interfaz = Interface(datos, root, {})
+            propuesta = interfaz.store.changes(informe["sesion"])[0]
+            self.assertEqual(propuesta["state"], "pending")
+            self.assertFalse((project / "demo.py").exists())

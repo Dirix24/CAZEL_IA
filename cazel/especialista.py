@@ -33,13 +33,15 @@ def proponer(proyecto, objetivo, datos):
                 "nota": "La propuesta quedó pendiente de aprobación en CAZEL Studio."}
 
     resultado = interfaz.agent.run(
-        sesion, objetivo + "\nPrepara cambios pequeños. Deja cada edición pendiente de revisión. "
+        sesion, objetivo + "\nPlanifica como máximo tres pasos. Usa write_file o apply_patch para "
+        "dejar al menos una edición pendiente de revisión antes de finish. "
         "No puedes ejecutar pruebas en esta fase.", tarea, dejar_pendiente, steps=6,
     )
     propuestas = [{"tipo": "propuesta", "id": item["id"], "path": item["path"]}
                   for item in interfaz.store.changes(sesion) if item["state"] == "pending"]
     return {**base, "estado": "parcial" if propuestas else "no_disponible", "sesion": sesion,
-            "evidencia": propuestas, "fase": resultado["state"]}
+            "evidencia": propuestas, "fase": resultado["state"],
+            **({} if propuestas else {"error": "El motor local no produjo una propuesta revisable."})}
 
 
 def coordinar(peticion, proyecto=None, *, permitir_pruebas=False, permitir_propuestas=False, datos=None):

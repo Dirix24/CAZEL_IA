@@ -144,3 +144,8 @@ estándar. Ofrece inventario técnico y análisis sintáctico del proyecto
 seleccionado. La ejecución de pruebas requiere `--permitir-pruebas` y
 usa el perfil aislado de CAZEL. Para editar u operar hardware se usan
 las interfaces existentes y sus flujos de aprobación.
+
+Con `--permitir-propuestas`, la acción v1 `proponer` llama al modelo
+local configurado y deja los cambios pendientes en una sesión de Studio.
+La respuesta incluye el identificador de sesión y las rutas propuestas.
+`--datos` selecciona la misma carpeta de ajustes y sesiones que Studio.
