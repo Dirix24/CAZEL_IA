@@ -3,7 +3,7 @@
 import ast
 from pathlib import Path
 
-from cazel.proyecto import analizar
+from cazel.proyecto import EXTENSIONES, analizar
 
 LANGUAGES = {
     ".py": "Python", ".js": "JavaScript", ".jsx": "JavaScript", ".ts": "TypeScript",
@@ -28,7 +28,8 @@ def inspect_file(path, text):
                          else [(node.level * ".") + (node.module or "")] if isinstance(node, ast.ImportFrom)
                          else [])
         })[:100]
-    result["heuristics"] = analizar([{"ruta": path, "contenido": text}])
+    if text and Path(path).suffix.lower() in EXTENSIONES:
+        result["heuristics"] = analizar([{"ruta": path, "texto": text}])
     return result
 
 
