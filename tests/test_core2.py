@@ -46,7 +46,7 @@ class Core2(unittest.TestCase):
         return self.ui.action(name, {"session": self.session, **args})
 
     def test_read_excludes_escapes_and_secrets(self):
-        (self.project / "main.py").write_text("x = 1\n", encoding="utf-8")
+        (self.project / "main.py").write_bytes(b"x = 1\n")
         outside = self.root / "outside.py"
         outside.write_text("no leer", encoding="utf-8")
         for name in ("../outside.py", str(outside), ".env", "config/token.txt", "x:ads", "CON"):
@@ -230,7 +230,7 @@ class Core2(unittest.TestCase):
 
     def test_terminal_uses_shared_session(self):
         starts = Path(__file__).resolve().parents[1] / "iniciar.py"
-        terminal = subprocess.run([sys.executable, str(starts), "--interfaz", "terminal", "--datos", str(self.data)],
+        terminal = subprocess.run([sys.executable, "-X", "utf8", str(starts), "--interfaz", "terminal", "--datos", str(self.data)],
                                   input=f"/session {self.session}\n/status\n/help\n/exit\n",
                                   encoding="utf-8", capture_output=True, timeout=10, check=True)
         self.assertIn("CAZEL Terminal", terminal.stdout)

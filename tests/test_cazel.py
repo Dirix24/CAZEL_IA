@@ -11,7 +11,6 @@ import gzip
 import http.client
 import json
 import os
-import pty
 import shutil
 import subprocess
 import sys
@@ -628,6 +627,8 @@ class TestRobot(Base):
 @unittest.skipUnless(sys.platform.startswith("linux") and transporte.termios is not None, "solo Linux")
 class TestSerieTermios(Base):
     def test_detectar_y_controlar_por_un_puerto_real(self):
+        import pty
+
         maestro, esclavo = pty.openpty()
         ruta = os.path.realpath(os.ttyname(esclavo))
         os.environ["CAZEL_PERMITIR_PTY"] = "1"

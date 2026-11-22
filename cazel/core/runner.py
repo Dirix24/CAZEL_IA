@@ -9,7 +9,7 @@ import sys
 import tempfile
 import time
 
-PROFILES = {"python-unittest": ("-I", "-B", "-m", "unittest", "discover", "-s", ".", "-t", ".", "-v")}
+PROFILES = {"python-unittest": ("-I", "-B", "-X", "utf8", "-m", "unittest", "discover", "-s", ".", "-t", ".", "-v")}
 MAX_OUTPUT = 48_000
 
 
