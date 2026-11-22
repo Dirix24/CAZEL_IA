@@ -46,3 +46,24 @@ class Especialista(unittest.TestCase):
             propuesta = interfaz.store.changes(informe["sesion"])[0]
             self.assertEqual(propuesta["state"], "pending")
             self.assertFalse((project / "demo.py").exists())
+
+    def test_evidencia_registrada_solo_para_el_proyecto_seleccionado(self):
+        from cazel.core.interface import Interface
+        from cazel.config import RAIZ
+
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            project = root / "proyecto"
+            other = root / "otro"
+            project.mkdir()
+            other.mkdir()
+            datos = root / "datos"
+            interfaz = Interface(datos, RAIZ, {})
+            sesion = interfaz.agent.open(project)
+            interfaz.store.event(sesion, "test", state="passed", returncode=0,
+                                  profile="python-unittest", output="contenido reservado")
+            peticion = {"version": 1, "accion": "evidencia", "objetivo": sesion}
+            resultado = coordinar(peticion, project, datos=datos)
+            self.assertEqual(resultado["evidencia"], [
+                {"tipo": "prueba_registrada", "state": "passed", "returncode": 0, "profile": "python-unittest"}])
+            self.assertEqual(coordinar(peticion, other, datos=datos)["estado"], "no_disponible")

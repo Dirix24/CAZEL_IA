@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import re
 from pathlib import Path
 import sys
 from threading import Event
@@ -50,11 +51,11 @@ def coordinar(peticion, proyecto=None, *, permitir_pruebas=False, permitir_propu
     base = {"version": VERSION, "especialista": "CAZEL"}
     accion = peticion.get("accion")
     if accion == "capacidades":
-        return {**base, "estado": "ok", "capacidades": ["analizar", "probar", "proponer"]}
+        return {**base, "estado": "ok", "capacidades": ["analizar", "probar", "proponer", "evidencia"]}
     objetivo = peticion.get("objetivo")
     if not isinstance(objetivo, str) or not 1 <= len(objetivo.strip()) <= 600:
         raise ValueError("Indica un objetivo de hasta 600 caracteres.")
-    if accion not in ("analizar", "probar", "proponer"):
+    if accion not in ("analizar", "probar", "proponer", "evidencia"):
         raise ValueError("Acción CAZEL desconocida.")
     if proyecto is None:
         return {**base, "estado": "no_disponible", "error": "Selecciona previamente un proyecto CAZEL."}
@@ -64,7 +65,17 @@ def coordinar(peticion, proyecto=None, *, permitir_pruebas=False, permitir_propu
         return proponer(proyecto, objetivo, datos)
     ws = Workspace(proyecto, config.rutas(datos)["datos"])
     evidencia = []
-    if accion == "probar":
+    if accion == "evidencia":
+        if not re.fullmatch(r"[0-9a-f]{32}", objetivo):
+            raise ValueError("Identificador de sesión inválido.")
+        interfaz = Interface(config.rutas(datos)["datos"], config.RAIZ, {})
+        clave, _ = interfaz.store.session(objetivo)
+        if clave != interfaz.store.project_key(ws.root):
+            return {**base, "estado": "no_disponible", "error": "La sesión pertenece a otro proyecto."}
+        evidencia = [{"tipo": "prueba_registrada", "state": evento["state"],
+                      "returncode": evento["returncode"], "profile": evento["profile"]}
+                     for evento in interfaz.store.history(objetivo) if evento["kind"] == "test"][-5:]
+    elif accion == "probar":
         if not permitir_pruebas:
             return {**base, "estado": "no_disponible", "error": "Las pruebas requieren permiso explícito."}
         resultado = run_tests(ws, "python-unittest", "isolated", Event(), timeout=20)
