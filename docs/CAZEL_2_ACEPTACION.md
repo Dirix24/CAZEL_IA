@@ -86,3 +86,20 @@ python3 -m unittest discover -s tests
 python3 herramientas/verificar_usb.py /ruta/al/paquete
 CAZEL_REQUIRE_BWRAP=1 /usr/bin/python3 -m unittest discover -s tests -p test_core2_isolation.py -v
 ```
+
+## Comprobar un proveedor remoto autorizado
+
+Configura el proveedor y su variable de entorno según la guía de uso.
+El verificador envía una suma sintética. No abre proyectos ni lee sus
+archivos, sesiones o lecciones.
+
+```sh
+python3 herramientas/verificar_proveedor.py datos/core2-modelos.json --autorizar-envio
+```
+
+Para el ensayo físico, conecta un dispositivo CAZEL-1 en un banco de
+pruebas seguro. Verifica su detección y su perfil desde la interfaz
+clásica. Comprueba el rechazo de una orden fuera del rango anunciado
+y acciona la parada de emergencia mientras Studio ejecuta una tarea
+de programación. Registra la respuesta del dispositivo y si la tarea
+seguía activa al enviar `PARAR`.
