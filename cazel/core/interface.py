@@ -4,6 +4,8 @@ import threading
 import time
 from pathlib import Path
 
+from cazel import github_repo, proyecto
+
 from .agent import Agent, Task
 from .models import Router
 from .store import Store
@@ -43,6 +45,18 @@ class Interface:
                     task.cancel.set()
             return {"cancelled": task is not None}
         ws = self.agent.workspace(session)
+        if operation == "research":
+            if data.get("authorized") is not True:
+                raise ValueError("Autoriza primero la consulta de ese repositorio público.")
+            try:
+                remote = github_repo.descargar(text(data, "url", 300))
+                result = {"repository": remote["repositorio"], "url": remote["url"],
+                          "report": proyecto.analizar(remote["archivos"]),
+                          "truncated": remote["truncado"]}
+            except github_repo.ErrorGitHub as error:
+                raise ValueError(str(error)) from error
+            self.store.event(session, "research", **result)
+            return result
         if operation == "files":
             return ws.files()
         if operation == "read":

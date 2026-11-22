@@ -4,12 +4,7 @@ import json
 import os
 from urllib import error, parse, request
 
-from cazel.motor_externo import ErrorMotor, MAX_RESPUESTA, validar_host
-
-
-class SinRedireccion(request.HTTPRedirectHandler):
-    def redirect_request(self, req, fp, code, msg, headers, newurl):
-        return None
+from cazel.motor_externo import ErrorMotor, MAX_RESPUESTA, SinRedireccion, validar_host
 
 
 class Router:

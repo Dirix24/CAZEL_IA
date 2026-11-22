@@ -9,7 +9,7 @@ import sys
 import tempfile
 import time
 
-PROFILES = {"python-unittest": ("-B", "-m", "unittest", "discover", "-v")}
+PROFILES = {"python-unittest": ("-I", "-B", "-m", "unittest", "discover", "-s", ".", "-t", ".", "-v")}
 MAX_OUTPUT = 48_000
 
 
@@ -91,7 +91,7 @@ def run_tests(workspace, profile, permission, cancel, timeout=30):
             output.seek(0)
             bruto = output.read(MAX_OUTPUT + 1)
         decoded = bruto[:MAX_OUTPUT].decode("utf-8", errors="replace")
-        if not reason and code == 0 and "Ran 0 tests" in decoded:
+        if not reason and code in {0, 5} and "Ran 0 tests" in decoded:
             reason = "no_tests"
         return {"profile": profile, "returncode": code, "isolation": permission,
                 "state": reason or ("passed" if code == 0 and len(bruto) <= MAX_OUTPUT else "failed"),

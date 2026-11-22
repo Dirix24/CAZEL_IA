@@ -128,6 +128,7 @@ function renderEvents(events) {
       request: event.text,
       exploration: "Exploración · " + (event.files || []).length + " candidatos",
       plan: (event.steps || []).join(" → "),
+      research: "Investigación pública · " + event.repository,
       proposal: "Edición propuesta · " + event.path,
       tool: event.ok ? "Herramienta · " + event.name : event.error,
       model: "Modelo · " + event.mode,
@@ -187,6 +188,13 @@ bind("open", async () => {
   await sessions();
 });
 bind("sessions", () => select(el("sessions").value), "change");
+bind("research", async () => {
+  const url = el("research-url").value;
+  if (!url || !window.confirm("¿Consultar este repositorio público en GitHub?")) return;
+  const report = await api("research", {url, authorized: true});
+  el("research-report").textContent = JSON.stringify(report, null, 2);
+  await refresh();
+});
 bind("refresh", files);
 bind("stage", async () => {
   await api("stage", {path: el("path").value, content: el("code").value});

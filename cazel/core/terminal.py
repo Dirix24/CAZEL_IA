@@ -16,6 +16,7 @@ HELP = """/project [ruta]   Abrir proyecto o listar sesiones
 /reject ID        Rechazar una propuesta
 /undo [ID]        Deshacer la edición indicada o la última aplicada
 /test             Ejecutar unittest con permiso
+/research URL     Analizar un repositorio público de GitHub con permiso
 /clear            Limpiar pantalla
 /help             Mostrar comandos
 /exit             Salir
@@ -82,6 +83,9 @@ def terminal(ui, project=None):
                 if permission:
                     task = Task(threading.Event(), time.monotonic() + 30, permission)
                     show(ui.agent.tests(session, ui.agent.workspace(session), task, "python-unittest"))
+            elif command == "/research":
+                if input("¿Consultar esta URL en GitHub? [s/N] ").lower() == "s":
+                    show(ui.action("research", {**data, "url": argument, "authorized": True}))
             elif command.startswith("/"):
                 print("Comando desconocido. Usa /help.")
             else:

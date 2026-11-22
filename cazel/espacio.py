@@ -47,6 +47,8 @@ class GestorEspacio:
         return [
             os.path.join(self.raiz, "cerebro", "checkpoints"),
             os.path.join(self.datos, "memoria.json"),
+            os.path.join(self.datos, "core2.sqlite3"),
+            os.path.join(self.datos, "core2-modelos.json"),
             os.path.join(self.datos, "ajustes.json"),
             os.path.join(self.datos, "biblioteca"),
             os.path.join(self.datos, "robots"),
