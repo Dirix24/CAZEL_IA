@@ -1,0 +1,22 @@
+name: Aceptación aislamiento Linux
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/aislamiento-linux.yml'
+      - 'cazel/core/**'
+      - 'tests/test_core2_isolation.py'
+
+permissions:
+  contents: read
+
+jobs:
+  verificar:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y bubblewrap
+      - run: /usr/bin/python3 -m unittest discover -s tests -p test_core2_isolation.py -v
+        env:
+          CAZEL_REQUIRE_BWRAP: '1'
