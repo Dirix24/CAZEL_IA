@@ -124,3 +124,19 @@ equipo. Arranca el modelo desde su propia instalación o binario portable.
   incorrecta y confirma que las pruebas pasan después de aceptar su corrección.
   Repite desde un proyecto vacío con un modelo local y la red externa
   desconectada.
+
+## Resultados de desarrollo
+
+| Comprobación en Linux x86_64 | Resultado |
+| --- | --- |
+| `python3 -m unittest discover -s tests` | 93 pruebas correctas, incluida la regresión clásica, robótica simulada y API protegida de Studio |
+| Calculadora con el doble de modelo de integración | Archivos reales, diff, fallo `-1 != 5` con código 1, corrección por parche, prueba correcta con código 0 y restauración del cambio |
+| Studio en Chromium | Apertura de proyecto, previsualización, aceptación, `unittest` real, deshacer, tema y ancho móvil |
+| Distribución Linux x86_64 con CPython 3.12 | Importaciones de NumPy, pyserial y SQLite, y arranque de Terminal desde el árbol ensamblado |
+| Bubblewrap en el entorno de desarrollo | Bloqueado por la configuración de espacios de nombres del host. Las pruebas registradas usaron el perfil de proyecto confiable |
+| Calculadora con un modelo de programación real y repetición offline | Pendientes. El entorno carecía de servidor y pesos locales preparados y no se verificó un proveedor remoto |
+| Paquete Windows y hardware de robótica | Pendientes de verificación en equipos de destino |
+
+El guion de la calculadora comprueba la integración de herramientas con un
+doble de modelo. La capacidad del modelo para planificar, diagnosticar y
+corregir por sí solo necesita la prueba de aceptación real.
