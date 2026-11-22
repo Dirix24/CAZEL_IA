@@ -11,7 +11,6 @@ import gzip
 import http.client
 import json
 import os
-import pty
 import shutil
 import subprocess
 import sys
@@ -19,6 +18,7 @@ import tempfile
 import threading
 import time
 import unittest
+from unittest.mock import patch
 import urllib.request
 
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -628,6 +628,8 @@ class TestRobot(Base):
 @unittest.skipUnless(sys.platform.startswith("linux") and transporte.termios is not None, "solo Linux")
 class TestSerieTermios(Base):
     def test_detectar_y_controlar_por_un_puerto_real(self):
+        import pty
+
         maestro, esclavo = pty.openpty()
         ruta = os.path.realpath(os.ttyname(esclavo))
         os.environ["CAZEL_PERMITIR_PTY"] = "1"
@@ -932,6 +934,28 @@ class TestServidor(Base):
         self.assertEqual(self.pedir("GET", "/../servidor.py", token=False)[0], 404)
         self.assertEqual(self.pedir("GET", "/web/../../iniciar.py", token=False)[0], 404)
 
+    def test_studio_comparte_api_y_protege_los_cambios(self):
+        self.assertIn(b"CAZEL Studio", self.pedir("GET", "/studio", token=False)[1])
+        self.assertEqual(self.pedir("GET", "/studio.js", token=False)[0], 200)
+        self.assertEqual(self.api("core2/sessions", token=False)[0], 401)
+        self.assertEqual(self.api("core2/sessions", cabeceras={"Origin": "https://otro.test"})[0], 403)
+        proyecto = tmp()
+        self.addCleanup(shutil.rmtree, proyecto, True)
+        status, opened = self.api("core2/open", {"path": proyecto})
+        self.assertEqual(status, 200)
+        session = {"session": opened["session"]}
+        status, proposed = self.api("core2/stage", {**session, "path": "main.py", "content": "x = 1"})
+        self.assertEqual(status, 200)
+        self.assertIn("+x = 1", proposed["diff"])
+        ruta = os.path.join(proyecto, "main.py")
+        self.assertFalse(os.path.exists(ruta))
+        change = {**session, "id": proposed["id"]}
+        self.assertEqual(self.api("core2/accept", change)[0], 200)
+        self.assertTrue(os.path.isfile(ruta))
+        self.assertEqual(self.api("core2/read", {**session, "path": "../main.py"})[0], 400)
+        self.assertEqual(self.api("core2/undo", change)[0], 200)
+        self.assertFalse(os.path.exists(ruta))
+
     def test_sin_token_o_con_token_falso(self):
         self.assertEqual(self.pedir("GET", "/api/estado", token=False)[0], 401)
         self.assertEqual(self.pedir("GET", "/api/estado", token=False, cabeceras={"X-Cazel-Token": "falso"})[0], 401)
@@ -992,6 +1016,35 @@ class TestServidor(Base):
         self.assertIn("CAZEL 1", d["sketch"])
         self.assertEqual(self.api("codigo_adaptador", {"codigo": CODIGO, "nombre": "Mal Nombre"})[0], 400)
         self.assertEqual(self.api("codigo_analizar", {"codigo": ""})[0], 400)
+
+    def test_parada_independiente_de_una_tarea_activa(self):
+        self.assertTrue(self.api("robots_conectar", {"puerto": "simulado"})[1]["conectado"])
+        robot = self.cazel.robots._tr
+        proyecto = tmp()
+        self.addCleanup(shutil.rmtree, proyecto, True)
+        _, opened = self.api("core2/open", {"path": proyecto})
+        data = {"session": opened["session"]}
+        started, release = threading.Event(), threading.Event()
+
+        def model(*args):
+            started.set()
+            release.wait(5)
+            return '{"tool":"finish","args":{"summary":"Fin de la prueba"}}', "offline"
+
+        with patch.object(self.srv.studio.agent.router, "chat", side_effect=model):
+            try:
+                self.assertEqual(self.api("core2/start", {**data, "prompt": "Revisa el proyecto"})[0], 200)
+                self.assertTrue(started.wait(3))
+                self.assertTrue(self.api("core2/status", data)[1]["active"])
+                self.assertEqual(self.api("robots_parar")[0], 200)
+                self.assertEqual(robot.historial[-1], "PARAR")
+                self.assertTrue(self.api("core2/status", data)[1]["active"])
+            finally:
+                release.set()
+                deadline = time.monotonic() + 3
+                while self.api("core2/status", data)[1]["active"] and time.monotonic() < deadline:
+                    time.sleep(0.05)
+            self.assertFalse(self.api("core2/status", data)[1]["active"])
 
     def test_apagar_envia_parar_al_robot(self):
         self.api("robots_conectar", {"puerto": "simulado"})

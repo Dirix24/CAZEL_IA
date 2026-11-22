@@ -7,6 +7,16 @@ pides, investiga en Wikipedia con permiso y se conecta a robots serie compatible
 Cerebro es su mente (el modelo hecho con NumPy) y las ideas de seguridad de
 Arquitectura-Arus son su cuerpo (permisos, registro, límites).
 
+## CAZEL Core 2
+
+CAZEL Terminal y CAZEL Studio comparten proyectos, sesiones y cambios
+reversibles. Ambos pueden conectarse a un modelo local o a un proveedor
+remoto autorizado. Arranca con `CAZEL_TERMINAL` o `CAZEL_STUDIO` para tu
+sistema. Consulta la [guía de uso y preparación USB](docs/CAZEL_2_USO.md)
+para configurar el modelo, los permisos y los perfiles de pruebas.
+
+Las secciones siguientes describen la interfaz clásica y la robótica.
+
 ## Cómo usarlo
 
 1. Copia la carpeta `CAZEL_IA` entera al USB.
@@ -126,3 +136,16 @@ tests/       pruebas
 El código original de CAZEL IA y Cerebro se distribuye bajo la [licencia MIT](LICENSE).
 El contenido de terceros, incluidos los textos consultados en Wikipedia, conserva
 la licencia y la atribución de su fuente.
+
+## Integración local con CEREBRO
+
+`python3 -m cazel.especialista --proyecto RUTA` recibe JSON v1 por entrada
+estándar. Ofrece inventario técnico y análisis sintáctico del proyecto
+seleccionado. La ejecución de pruebas requiere `--permitir-pruebas` y
+usa el perfil aislado de CAZEL. Para editar u operar hardware se usan
+las interfaces existentes y sus flujos de aprobación.
+
+Con `--permitir-propuestas`, la acción v1 `proponer` llama al modelo
+local configurado y deja los cambios pendientes en una sesión de Studio.
+La respuesta incluye el identificador de sesión y las rutas propuestas.
+`--datos` selecciona la misma carpeta de ajustes y sesiones que Studio.

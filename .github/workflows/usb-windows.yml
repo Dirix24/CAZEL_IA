@@ -1,0 +1,41 @@
+name: Aceptación USB Windows
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/usb-windows.yml'
+      - 'cazel/**'
+      - 'herramientas/**'
+      - 'iniciar.py'
+      - '*.bat'
+      - 'tests/**'
+
+permissions:
+  contents: read
+
+jobs:
+  verificar:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Preparar y verificar el paquete
+        shell: pwsh
+        run: |
+          $runtime = Join-Path $env:RUNNER_TEMP 'cazel-runtime'
+          $libs = Join-Path $env:RUNNER_TEMP 'cazel-libs'
+          $package = Join-Path $env:RUNNER_TEMP 'cazel-package'
+          $zip = Join-Path $env:RUNNER_TEMP 'python-embed.zip'
+          Invoke-WebRequest https://www.python.org/ftp/python/3.12.10/python-3.12.10-embed-amd64.zip -OutFile $zip
+          Expand-Archive $zip $runtime
+          python -m pip install --only-binary=:all: --target $libs numpy pyserial
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $env:PYTHONPATH = $libs
+          python -m unittest discover -s tests
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python herramientas/empaquetar_usb.py --python-portatil $runtime --libs $libs --salida $package
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python herramientas/verificar_usb.py $package

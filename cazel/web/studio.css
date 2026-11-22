@@ -1,0 +1,45 @@
+:root {
+  color-scheme: dark;
+  --bg: #141816;
+  --panel: #1c211f;
+  --line: #38443e;
+  --text: #ecf1ec;
+  --accent: #9de0b4;
+  --error: #ffaaa5;
+  --code: #101411;
+}
+:root.light {
+  color-scheme: light;
+  --bg: #f1f5f0;
+  --panel: #fff;
+  --line: #bccbbf;
+  --text: #17261e;
+  --accent: #166540;
+  --error: #9a2523;
+  --code: #e8efe9;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 15px system-ui, sans-serif; }
+header { display: flex; align-items: center; flex-wrap: wrap; gap: 15px; padding: 12px 20px; border-bottom: 1px solid var(--line); }
+h1 { font-size: 20px; margin: 0; }
+header span { flex: 1; }
+a, summary { color: var(--accent); }
+main { display: grid; grid-template-columns: minmax(155px, .65fr) minmax(0, 1.6fr) minmax(0, 1.25fr); gap: 12px; padding: 12px; }
+main > * { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; min-width: 0; }
+h2 { font-size: 16px; margin: 10px 0; }
+label { display: block; margin: 10px 0 4px; }
+button, textarea, input, select { font: inherit; color: inherit; background: var(--code); border: 1px solid var(--line); border-radius: 5px; padding: 7px; }
+button { cursor: pointer; color: var(--accent); margin: 4px 4px 4px 0; }
+button:disabled { opacity: .55; cursor: default; }
+input:not([type=checkbox]), select, textarea { width: 100%; }
+textarea { resize: vertical; }
+pre, #code { font: 13px/1.5 ui-monospace, monospace; }
+pre { overflow: auto; max-height: 22rem; background: var(--code); padding: 10px; white-space: pre-wrap; overflow-wrap: anywhere; }
+fieldset { margin: 10px 0; border: 1px solid var(--line); min-width: 0; }
+#events, #files { max-height: 19rem; overflow: auto; overflow-wrap: anywhere; }
+#files button { display: block; max-width: 100%; overflow-wrap: anywhere; text-align: left; }
+.keyword, .addition { color: var(--accent); }
+.removal, .error { color: var(--error); }
+summary { cursor: pointer; margin: 8px 0; }
+article { border-top: 1px solid var(--line); padding-top: 6px; }
+@media (max-width: 860px) { main { grid-template-columns: 1fr; } }

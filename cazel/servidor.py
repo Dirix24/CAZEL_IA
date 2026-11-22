@@ -21,9 +21,12 @@ import secrets
 import threading
 import time
 import webbrowser
+from functools import cached_property
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from . import motor_externo, github_repo, proyecto
+from .core.interface import Interface
+from .config import RAIZ
 from .nucleo import Cazel, ErrorCazel
 from .puerta import ErrorPuerta
 from .robot import protocolo
@@ -32,6 +35,8 @@ from .robot.control import ErrorRobot
 DIR_WEB = os.path.join(os.path.dirname(os.path.abspath(__file__)), "web")
 MAX_CUERPO = 400_000
 ARCHIVOS_ESTATICOS = {
+    "/studio.css": ("studio.css", "text/css; charset=utf-8"),
+    "/studio.js": ("studio.js", "application/javascript; charset=utf-8"),
     "/app.css": ("app.css", "text/css; charset=utf-8"),
     "/app.js": ("app.js", "application/javascript; charset=utf-8"),
 }
@@ -52,8 +57,9 @@ def _texto(d, clave, maximo=4000, obligatorio=True):
 
 
 class Servidor:
-    def __init__(self, cazel, puerto=8765, abrir_navegador=True, minutos_inactividad=20):
+    def __init__(self, cazel, puerto=8765, abrir_navegador=True, minutos_inactividad=20, pagina="/"):
         self.cazel = cazel
+        self.pagina = pagina
         self.token = secrets.token_urlsafe(18)
         self.abrir_navegador = abrir_navegador
         self.inactividad_s = max(1, minutos_inactividad) * 60
@@ -75,7 +81,11 @@ class Servidor:
 
     @property
     def url(self):
-        return f"http://127.0.0.1:{self.puerto}/"
+        return f"http://127.0.0.1:{self.puerto}{self.pagina}"
+
+    @cached_property
+    def studio(self):
+        return Interface(self.cazel.rutas["datos"], RAIZ, self.cazel.ajustes["motor_externo"])
 
     # -- acciones de la API --------------------------------------------------------------
 
@@ -223,9 +233,9 @@ class Servidor:
                 if not self._host_ok():
                     return self._json(403, {"error": "Host no permitido."})
                 ruta = self.path.split("?", 1)[0]
-                if ruta == "/":
+                if ruta in {"/", "/studio"}:
                     try:
-                        with open(os.path.join(DIR_WEB, "index.html"), "r", encoding="utf-8") as f:
+                        with open(os.path.join(DIR_WEB, "studio.html" if ruta == "/studio" else "index.html"), "r", encoding="utf-8") as f:
                             html = f.read().replace("__TOKEN__", srv.token)
                     except OSError:
                         return self._json(500, {"error": "Falta la interfaz (carpeta cazel/web)."})
@@ -268,6 +278,11 @@ class Servidor:
                         raise ValueError
                 except (ValueError, UnicodeDecodeError):
                     return self._json(400, {"error": "JSON no válido."})
+                if ruta.startswith("/api/core2/"):
+                    try:
+                        return self._json(200, srv.studio.action(ruta[11:], datos))
+                    except (OSError, ValueError) as e:
+                        return self._json(400, {"error": str(e)})
                 accion = srv._acciones().get(ruta[5:])
                 if accion is None:
                     return self._json(404, {"error": "Acción desconocida."})
@@ -300,6 +315,8 @@ class Servidor:
         except KeyboardInterrupt:
             pass
         finally:
+            if "studio" in self.__dict__:
+                self.studio.close()
             self.cazel.cerrar()
             self.httpd.server_close()
 

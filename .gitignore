@@ -4,3 +4,5 @@ libs/
 python_portatil/
 __pycache__/
 *.pyc
+modelos/
+*.gguf
