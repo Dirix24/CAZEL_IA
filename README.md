@@ -136,3 +136,11 @@ tests/       pruebas
 El código original de CAZEL IA y Cerebro se distribuye bajo la [licencia MIT](LICENSE).
 El contenido de terceros, incluidos los textos consultados en Wikipedia, conserva
 la licencia y la atribución de su fuente.
+
+## Integración local con CEREBRO
+
+`python3 -m cazel.especialista --proyecto RUTA` recibe JSON v1 por entrada
+estándar. Ofrece inventario técnico y análisis sintáctico del proyecto
+seleccionado. La ejecución de pruebas requiere `--permitir-pruebas` y
+usa el perfil aislado de CAZEL. Para editar u operar hardware se usan
+las interfaces existentes y sus flujos de aprobación.
