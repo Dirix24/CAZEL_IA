@@ -173,7 +173,8 @@ class Agent:
     def run(self, session, prompt, task, approval, steps=24):
         ws = self.workspace(session)
         project, mode = self.store.session(session)
-        previous = self.store.history(session, 10)
+        local_context = mode == "offline" or (mode == "auto" and not task.remote)
+        previous = self.store.history(session, 10) if local_context else []
         self.store.event(session, "request", text=prompt)
         inventory = context(ws, prompt)
         self.store.event(session, "exploration", files=inventory)
@@ -196,7 +197,7 @@ class Agent:
         )
         lessons = []
         snippets = []
-        if mode == "offline" or (mode == "auto" and not task.remote):
+        if local_context:
             for item in inventory[:3]:
                 try:
                     source = ws.read(item["path"])

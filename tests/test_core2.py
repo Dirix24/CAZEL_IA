@@ -116,6 +116,7 @@ class Core2(unittest.TestCase):
         self.assertEqual(reopened.action("lessons", {"session": third}), [])
         with self.assertRaises(ValueError):
             reopened.action("forget", {"session": third, **created})
+        self.ui.store.event(self.session, "result", summary=note)
         model_output = ('{"tool":"finish","args":{"summary":"ok"}}', "offline")
         for mode, remote in [("offline", False), ("auto", True), ("online", True)]:
             self.call("mode", mode=mode)
