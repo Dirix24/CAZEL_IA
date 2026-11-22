@@ -140,3 +140,6 @@ equipo. Arranca el modelo desde su propia instalación o binario portable.
 El guion de la calculadora comprueba la integración de herramientas con un
 doble de modelo. La capacidad del modelo para planificar, diagnosticar y
 corregir por sí solo necesita la prueba de aceptación real.
+
+La continuación de la aceptación y las pruebas con un modelo real están en
+[CAZEL 2 · aceptación](CAZEL_2_ACEPTACION.md).
