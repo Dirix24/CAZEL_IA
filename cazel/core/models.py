@@ -59,7 +59,10 @@ class Router:
             body = json.dumps({"model": model, "messages": messages, "temperature": 0.1,
                                "stream": False, "max_tokens": 4096}).encode()
             req = request.Request(host.rstrip("/") + "/chat/completions", body, headers)
-            with opener.open(req, timeout=max(0.1, min(timeout, 30))) as reply:
+            configured_timeout = config.get("timeout_segundos", 30 if remote else 120)
+            if type(configured_timeout) not in (int, float) or not 1 <= configured_timeout <= 120:
+                raise ErrorMotor("El tiempo del modelo debe estar entre 1 y 120 segundos.")
+            with opener.open(req, timeout=max(0.1, min(timeout, configured_timeout))) as reply:
                 raw = reply.read(MAX_RESPUESTA + 1)
             if len(raw) > MAX_RESPUESTA:
                 raise ErrorMotor("Respuesta del modelo demasiado grande.")

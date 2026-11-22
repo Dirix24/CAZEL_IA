@@ -10,7 +10,7 @@ import time
 import unittest
 from unittest.mock import patch
 
-from cazel.core.agent import Task, validate
+from cazel.core.agent import Task, decode_tool, validate
 from cazel.core.analysis import inspect_file
 from cazel.core.interface import Interface
 from cazel.core.models import Router
@@ -136,6 +136,14 @@ class Core2(unittest.TestCase):
         self.assertEqual(result["symbols"][0]["name"], "A")
         self.assertEqual(inspect_file("a.py", "def x!")["confirmed"][0]["line"], 1)
         self.assertEqual(inspect_file("a.html", "<main></main>")["language"], "HTML")
+
+    def test_model_tool_decoding_accepts_only_one_json_object(self):
+        raw = '{"tool":"git_status","args":{}}'
+        self.assertEqual(decode_tool(raw), ("git_status", {}))
+        self.assertEqual(decode_tool("```json\n" + raw + "\n```"), ("git_status", {}))
+        for invalid in (raw + raw, "Explicación ```json\n" + raw + "\n```"):
+            with self.assertRaises(ValueError):
+                decode_tool(invalid)
 
     def test_tests_require_permission_and_bound_time(self):
         with self.assertRaises(ValueError):

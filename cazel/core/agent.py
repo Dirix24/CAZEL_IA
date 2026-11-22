@@ -5,6 +5,7 @@ import fnmatch
 import hashlib
 import json
 import os
+import re
 import shutil
 import subprocess
 import threading
@@ -37,6 +38,12 @@ class Task:
     deadline: float
     testing: str = ""
     remote: bool = False
+
+
+def decode_tool(raw):
+    text = raw.strip()
+    fenced = re.fullmatch(r"```(?:json)?[ \t]*\r?\n(.*)\r?\n```", text, re.DOTALL | re.IGNORECASE)
+    return validate(json.loads(fenced.group(1) if fenced else text))
 
 
 def validate(payload):
@@ -182,10 +189,11 @@ class Agent:
             relevant = {file["language"].casefold() for file in inventory}
             lessons.sort(key=lambda item: item["language"].casefold() not in relevant
                          and item["language"].casefold() not in prompt.casefold())
-        seed = json.dumps({"task": prompt, "files": inventory,
+        # Acotar los campos antes de serializar conserva JSON válido y la tarea completa.
+        seed = json.dumps({"task": prompt, "files": inventory[:25],
                            "lessons": lessons[:5],
-                           "previous": [e for e in previous if e["kind"] in {"request", "result", "plan"}][-4:]},
-                          ensure_ascii=False)[:16_000]
+                           "previous": [e for e in previous if e["kind"] in {"request", "result", "plan"}][-2:]},
+                          ensure_ascii=False)
         transcript = []
         verification = "unverified"
         state, summary = "limited", "Se alcanzó el límite de iteraciones."
@@ -205,7 +213,7 @@ class Agent:
                     break
                 self.store.event(session, "model", mode=used)
                 try:
-                    name, args = validate(json.loads(raw))
+                    name, args = decode_tool(raw)
                     if name == "finish":
                         summary = args["summary"]
                         state = {"passed": "verified", "failed": "failed",
