@@ -22,6 +22,9 @@ class Store:
                 CREATE TABLE IF NOT EXISTS events (
                     id INTEGER PRIMARY KEY, session TEXT NOT NULL, kind TEXT NOT NULL, data TEXT NOT NULL);
                 CREATE INDEX IF NOT EXISTS events_session ON events(session, id);
+                CREATE TABLE IF NOT EXISTS lessons (
+                    id INTEGER PRIMARY KEY, project TEXT NOT NULL, language TEXT NOT NULL, note TEXT NOT NULL);
+                CREATE INDEX IF NOT EXISTS lessons_project ON lessons(project, id);
                 CREATE TABLE IF NOT EXISTS changes (
                     id TEXT PRIMARY KEY, session TEXT NOT NULL, project TEXT NOT NULL, path TEXT NOT NULL,
                     before TEXT, after TEXT NOT NULL, state TEXT NOT NULL DEFAULT 'pending');
@@ -77,6 +80,29 @@ class Store:
             rows = db.execute("SELECT kind, data FROM events WHERE session=? ORDER BY id DESC LIMIT ?",
                               (session, limit)).fetchall()
         return [{"kind": kind, **json.loads(data)} for kind, data in reversed(rows)]
+
+    def lessons(self, project, limit=30):
+        with self.db() as db:
+            rows = db.execute("SELECT id, language, note FROM lessons WHERE project=? "
+                              "ORDER BY id DESC LIMIT ?", (project, limit)).fetchall()
+        return [{"id": i, "language": language, "note": note} for i, language, note in rows]
+
+    def save_lesson(self, project, language, note):
+        with self.db() as db:
+            db.execute("BEGIN IMMEDIATE")
+            existing = db.execute("SELECT id FROM lessons WHERE project=? AND language=? AND note=?",
+                                  (project, language, note)).fetchone()
+            if existing:
+                return existing[0]
+            cursor = db.execute("INSERT INTO lessons(project, language, note) VALUES (?, ?, ?)",
+                                (project, language, note))
+            return cursor.lastrowid
+
+    def forget_lesson(self, project, lesson):
+        with self.db() as db:
+            deleted = db.execute("DELETE FROM lessons WHERE id=? AND project=?", (lesson, project))
+            if not deleted.rowcount:
+                raise ValueError("Lección desconocida en este proyecto.")
 
     def stage(self, session, ws, path, before, after):
         if before == after:

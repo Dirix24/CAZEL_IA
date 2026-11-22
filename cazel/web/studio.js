@@ -162,16 +162,37 @@ async function refresh() {
   } finally { polling = false; }
 }
 
+async function lessons() {
+  const selected = session;
+  const entries = await api("lessons");
+  if (selected !== session) return;
+  const list = el("lessons");
+  list.replaceChildren();
+  for (const item of entries) {
+    const row = element("li", item.language + " · " + item.note);
+    const remove = element("button", "Olvidar");
+    remove.addEventListener("click", async () => {
+      if (selected !== session) return;
+      try {
+        await api("forget", {id: item.id});
+        await lessons();
+      } catch (problem) { error(problem.message); }
+    });
+    row.append(remove);
+    list.append(row);
+  }
+}
+
 async function select(id) {
   if (!id) return;
   session = id;
+  localStorage.setItem("cazel-session", id);
   changesKey = "";
   el("state").classList.remove("error");
-  for (const id of ["path", "code", "prompt"]) el(id).value = "";
-  for (const id of ["files", "changes", "events"]) el(id).replaceChildren();
+  for (const id of ["path", "code", "prompt", "patch", "lesson-note"]) el(id).value = "";
+  for (const id of ["files", "changes", "events", "lessons"]) el(id).replaceChildren();
   highlight();
-  await files();
-  await refresh();
+  await Promise.all([files(), lessons(), refresh()]);
 }
 
 function permissions() {
@@ -200,6 +221,15 @@ bind("stage", async () => {
   await api("stage", {path: el("path").value, content: el("code").value});
   await refresh();
 });
+bind("stage-patch", async () => {
+  await api("patch", {path: el("path").value, patch: el("patch").value});
+  await refresh();
+});
+bind("learn", async () => {
+  await api("learn", {language: el("lesson-language").value, note: el("lesson-note").value});
+  el("lesson-note").value = "";
+  await lessons();
+});
 bind("mode", async () => {
   await api("mode", {mode: el("mode").value});
   await refresh();
@@ -227,5 +257,11 @@ bind("theme", () => {
 });
 bind("code", highlight, "input");
 document.documentElement.classList.toggle("light", localStorage.getItem("cazel-theme") === "light");
-sessions().catch(problem => error(problem.message));
+sessions().then(async () => {
+  const remembered = localStorage.getItem("cazel-session");
+  if ([...el("sessions").options].some(option => option.value && option.value === remembered)) {
+    el("sessions").value = remembered;
+    await select(remembered);
+  }
+}).catch(problem => error(problem.message));
 setInterval(() => refresh().catch(problem => error(problem.message)), 1200);

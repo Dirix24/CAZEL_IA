@@ -116,27 +116,38 @@ class Workspace:
             Path(temporal).unlink(missing_ok=True)
 
 
+def lineas_diff(texto):
+    return re.findall(r"[^\n]*\n|[^\n]+$", texto or "")
+
+
 def diferencia(nombre, antes, despues):
     lineas = difflib.unified_diff(
-        (antes or "").splitlines(keepends=True), (despues or "").splitlines(keepends=True),
+        lineas_diff(antes), lineas_diff(despues),
         fromfile="/dev/null" if antes is None else "a/" + nombre,
         tofile="/dev/null" if despues is None else "b/" + nombre,
     )
     return "".join(l if l.endswith("\n") else l + "\n\\ No newline at end of file\n" for l in lineas)
 
 
-def aplicar_hunks(texto, parche):
+def aplicar_hunks(texto, parche, nombre=None):
     """Parche unificado de un solo archivo. Verifica contexto y tamaños."""
-    original = (texto or "").splitlines(keepends=True)
-    lineas = parche.splitlines(keepends=True)
+    original = lineas_diff(texto)
+    lineas = lineas_diff(parche)
     if len(lineas) < 3 or not lineas[0].startswith("--- ") or not lineas[1].startswith("+++ "):
         raise ValueError("Se esperaba un parche unificado.")
-    # El destino se elige en el parámetro path. Las cabeceras son informativas.
+    if nombre is not None:
+        origen, destino = (line[4:].rstrip("\r\n").split("\t", 1)[0] for line in lineas[:2])
+        if (origen not in ({"/dev/null"} if texto is None else {nombre, "a/" + nombre})
+                or destino not in {nombre, "b/" + nombre}):
+            raise ValueError("Las cabeceras del parche deben coincidir con la ruta y la operación.")
+    crlf = (not any(line.endswith("\r\n") for line in lineas)
+            and any(line.endswith("\r\n") for line in original)
+            and all(not line.endswith("\n") or line.endswith("\r\n") for line in original))
     resultado = []
     cursor = 0
     i = 2
     while i < len(lineas):
-        hunk = re.fullmatch(r"@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@[^\n]*\n?", lineas[i])
+        hunk = re.fullmatch(r"@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@[^\n]*\n?", lineas[i].rstrip("\r\n"))
         if not hunk:
             raise ValueError("Cabecera de parche inválida.")
         inicio, quitar, destino, poner = (int(v) if v is not None else 1 for v in hunk.groups())
@@ -154,9 +165,13 @@ def aplicar_hunks(texto, parche):
                 raise ValueError("Parche incompleto.")
             marca, contenido = lineas[i][0], lineas[i][1:]
             i += 1
-            if i < len(lineas) and lineas[i].rstrip("\n") == "\\ No newline at end of file":
+            if i < len(lineas) and lineas[i].rstrip("\r\n") == "\\ No newline at end of file":
                 contenido = contenido.removesuffix("\n")
+                if lineas[0].endswith("\r\n"):
+                    contenido = contenido.removesuffix("\r")
                 i += 1
+            if crlf and contenido.endswith("\n") and not contenido.endswith("\r\n"):
+                contenido = contenido[:-1] + "\r\n"
             if marca in {" ", "-"}:
                 if quitar <= 0 or cursor >= len(original) or original[cursor] != contenido:
                     raise ValueError("El contexto del parche no coincide.")

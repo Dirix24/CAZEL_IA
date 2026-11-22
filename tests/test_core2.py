@@ -91,6 +91,41 @@ class Core2(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.ui.agent.stage(self.session, self.ws, "hello.py", patch=patch_text.replace("-last", "-other"))
 
+    def test_patch_preserves_crlf_and_rejects_mismatched_headers(self):
+        path = self.project / "original.txt"
+        path.write_bytes("línea\r\nantes\r\n".encode())
+        patch_text = "--- a/original.txt\n+++ b/original.txt\n@@ -1,2 +1,2 @@\n línea\n-antes\n+después\n"
+        with self.assertRaisesRegex(ValueError, "cabeceras"):
+            self.call("patch", path="original.txt", patch=patch_text.replace("b/original.txt", "b/otro.txt"))
+        change = self.call("patch", path="original.txt", patch=patch_text)
+        self.call("accept", id=change["id"])
+        self.assertEqual(path.read_bytes(), "línea\r\ndespués\r\n".encode())
+        self.call("undo", id=change["id"])
+        self.assertEqual(path.read_bytes(), "línea\r\nantes\r\n".encode())
+
+    def test_project_lessons_are_shared_and_stay_local(self):
+        note = "Para los enteros usa nombres descriptivos."
+        created = self.call("learn", language="Rust", note=note)
+        self.assertEqual(self.call("learn", language="Rust", note=note), created)
+        reopened = Interface(self.data, self.root, {})
+        second = reopened.agent.open(self.project)
+        self.assertEqual(reopened.action("lessons", {"session": second})[0]["note"], note)
+        elsewhere = self.root / "otro"
+        elsewhere.mkdir()
+        third = reopened.agent.open(elsewhere)
+        self.assertEqual(reopened.action("lessons", {"session": third}), [])
+        with self.assertRaises(ValueError):
+            reopened.action("forget", {"session": third, **created})
+        model_output = ('{"tool":"finish","args":{"summary":"ok"}}', "offline")
+        for mode, remote in [("offline", False), ("auto", True), ("online", True)]:
+            self.call("mode", mode=mode)
+            task = Task(threading.Event(), time.monotonic() + 3, remote=remote)
+            with patch.object(self.ui.agent.router, "chat", return_value=model_output) as chat:
+                self.ui.agent.run(self.session, "Escribe Rust", task, None)
+                self.assertEqual(note in chat.call_args.args[2][1]["content"], mode == "offline")
+        self.call("forget", **created)
+        self.assertEqual(reopened.action("lessons", {"session": second}), [])
+
     def test_schema_and_inspection(self):
         for payload in ({}, {"tool": "shell", "args": {}}, {"tool": "run_tests", "args": {"command": "ls"}},
                         {"tool": "read_file", "args": {"path": "x", "start": True, "end": 1}}):
@@ -136,7 +171,7 @@ class Core2(unittest.TestCase):
             ("write_file", {"path": "test_calculadora.py", "content": TEST}),
             ("run_tests", {"profile": "python-unittest"}),
             ("apply_patch", {"path": "calculadora.py", "patch":
-                             "--- a/ calculadora\n+++ b/calculadora\n@@ -1,2 +1,2 @@\n"
+                             "--- a/calculadora.py\n+++ b/calculadora.py\n@@ -1,2 +1,2 @@\n"
                              " def sumar(a, b):\n-    return a - b\n+    return a + b\n"}),
             ("run_tests", {"profile": "python-unittest"}),
             ("finish", {"summary": "Corrección aplicada y comprobada."}),

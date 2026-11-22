@@ -44,6 +44,18 @@ class Interface:
                 if task:
                     task.cancel.set()
             return {"cancelled": task is not None}
+        if operation == "lessons":
+            return self.store.lessons(project)
+        if operation == "learn":
+            language = text(data, "language", 40).strip()
+            note = text(data, "note", 800).strip()
+            return {"id": self.store.save_lesson(project, language, note)}
+        if operation == "forget":
+            lesson = data.get("id")
+            if type(lesson) is not int or not 0 < lesson < 2**63:
+                raise ValueError("Identificador de lección inválido.")
+            self.store.forget_lesson(project, lesson)
+            return {"removed": True}
         ws = self.agent.workspace(session)
         if operation == "research":
             if data.get("authorized") is not True:
@@ -72,8 +84,11 @@ class Interface:
                     raise ValueError("Espera a que termine la tarea para cambiar el modo.")
                 self.store.mode(session, selected)
             return {"mode": selected}
-        if operation == "stage":
-            return self.agent.stage(session, ws, text(data, "path"), content=data.get("content"))
+        if operation in {"stage", "patch"}:
+            path = text(data, "path")
+            if operation == "patch":
+                return self.agent.stage(session, ws, path, patch=text(data, "patch", 128 * 1024))
+            return self.agent.stage(session, ws, path, content=data.get("content"))
         if operation in {"accept", "reject", "undo"}:
             change = text(data, "id", 32)
             outcome = self.store.transition(session, ws, change, operation)

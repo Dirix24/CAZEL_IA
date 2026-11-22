@@ -16,6 +16,9 @@ HELP = """/project [ruta]   Abrir proyecto o listar sesiones
 /reject ID        Rechazar una propuesta
 /undo [ID]        Deshacer la edición indicada o la última aplicada
 /test             Ejecutar unittest con permiso
+/learn LENGUAJE | NOTA  Guardar una corrección del proyecto
+/lessons          Mostrar las correcciones guardadas
+/forget ID        Eliminar una corrección
 /research URL     Analizar un repositorio público de GitHub con permiso
 /clear            Limpiar pantalla
 /help             Mostrar comandos
@@ -83,6 +86,13 @@ def terminal(ui, project=None):
                 if permission:
                     task = Task(threading.Event(), time.monotonic() + 30, permission)
                     show(ui.agent.tests(session, ui.agent.workspace(session), task, "python-unittest"))
+            elif command == "/learn":
+                language, _, note = argument.partition("|")
+                show(ui.action("learn", {**data, "language": language, "note": note}))
+            elif command == "/lessons":
+                show(ui.action("lessons", data))
+            elif command == "/forget":
+                show(ui.action("forget", {**data, "id": int(argument)}))
             elif command == "/research":
                 if input("¿Consultar esta URL en GitHub? [s/N] ").lower() == "s":
                     show(ui.action("research", {**data, "url": argument, "authorized": True}))

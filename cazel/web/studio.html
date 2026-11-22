@@ -42,6 +42,12 @@
     <textarea id="code" spellcheck="false" rows="14"></textarea>
     <button id="stage" type="button">Previsualizar edición</button>
     <details><summary>Vista con resaltado</summary><pre id="syntax"></pre></details>
+    <details>
+      <summary>Previsualizar un parche unificado</summary>
+      <label for="patch">Parche para la ruta del editor</label>
+      <textarea id="patch" spellcheck="false" rows="6"></textarea>
+      <button id="stage-patch" type="button">Validar y previsualizar parche</button>
+    </details>
     <h2>Cambios</h2>
     <div id="changes"></div>
   </section>
@@ -70,6 +76,15 @@
       <button id="cancel" type="button">Cancelar tarea</button>
       <button id="test" type="button">Ejecutar pruebas</button>
     </div>
+    <details>
+      <summary>Aprender de mis correcciones</summary>
+      <label for="lesson-language">Lenguaje</label>
+      <input id="lesson-language" value="General" maxlength="40">
+      <label for="lesson-note">Convención o corrección del proyecto</label>
+      <textarea id="lesson-note" rows="3" maxlength="800"></textarea>
+      <button id="learn" type="button">Guardar lección local</button>
+      <ul id="lessons"></ul>
+    </details>
     <h2>Actividad e historial</h2>
     <ol id="events"></ol>
     <h2>Consola de pruebas</h2>
