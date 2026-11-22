@@ -124,3 +124,9 @@ class Store:
                 elif state != final:
                     raise ValueError("El cambio se procesó en otra sesión.")
         return {"id": change, "path": path, "state": final}
+
+    def change_state(self, session, change):
+        with self.db() as db:
+            row = db.execute("SELECT state FROM changes WHERE session=? AND id=?",
+                             (session, change)).fetchone()
+        return row[0] if row else None

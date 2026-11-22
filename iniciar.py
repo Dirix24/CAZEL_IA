@@ -34,9 +34,26 @@ def main():
     ap.add_argument("--sin-navegador", action="store_true")
     ap.add_argument("--puerto", type=int, default=None)
     ap.add_argument("--datos", default=None)
+    ap.add_argument("--interfaz", choices=("terminal", "studio", "clasica"))
+    ap.add_argument("--proyecto")
     args = ap.parse_args()
+    if args.interfaz is None and sys.stdin.isatty() and not args.sin_navegador:
+        print("1. CAZEL Terminal\n2. CAZEL Studio\n3. CAZEL clásico")
+        args.interfaz = {"1": "terminal", "2": "studio", "3": "clasica"}.get(
+            input("Interfaz [2]: ").strip(), "studio")
 
     from cazel import config as cfg          # añade libs/ al path si existe
+    if args.interfaz == "terminal":
+        from cazel.core.interface import Interface
+        from cazel.core.terminal import terminal
+
+        rutas = cfg.rutas(args.datos)
+        ui = Interface(rutas["datos"], RAIZ, cfg.cargar_ajustes(rutas["ajustes"])["motor_externo"])
+        try:
+            terminal(ui, args.proyecto)
+        finally:
+            ui.close()
+        return
     try:
         import numpy                          # noqa: F401
     except ImportError:
@@ -51,7 +68,8 @@ def main():
         _salir(str(e))
     aj = cazel.ajustes
     srv = Servidor(cazel, puerto=args.puerto or aj["puerto_web"], abrir_navegador=not args.sin_navegador,
-                   minutos_inactividad=aj.get("minutos_inactividad", 20))
+                   minutos_inactividad=aj.get("minutos_inactividad", 20),
+                   pagina="/studio" if args.interfaz == "studio" else "/")
     print("=" * 56)
     print("  CAZEL IA está funcionando")
     print(f"  Dirección:  {srv.url}")

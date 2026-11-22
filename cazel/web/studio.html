@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="cazel-token" content="__TOKEN__">
+<title>CAZEL Studio</title>
+<link rel="stylesheet" href="/studio.css">
+<script src="/studio.js" defer></script>
+</head>
+<body>
+<header>
+  <h1>CAZEL Studio</h1>
+  <span id="state" role="status">Selecciona un proyecto</span>
+  <a href="/">CAZEL clásico y robótica</a>
+  <button id="theme" type="button">Cambiar tema</button>
+</header>
+<main>
+  <aside>
+    <h2>Proyectos</h2>
+    <label for="project">Carpeta local</label>
+    <input id="project" placeholder="Ruta del proyecto">
+    <button id="open" type="button">Abrir</button>
+    <label for="sessions">Sesiones recientes</label>
+    <select id="sessions"></select>
+    <h2>Archivos</h2>
+    <button id="refresh" type="button">Actualizar</button>
+    <div id="files"></div>
+  </aside>
+  <section class="editor">
+    <h2>Editor</h2>
+    <label for="path">Ruta relativa</label>
+    <input id="path" placeholder="archivo.py">
+    <label for="code">Código fuente</label>
+    <textarea id="code" spellcheck="false" rows="14"></textarea>
+    <button id="stage" type="button">Previsualizar edición</button>
+    <details><summary>Vista con resaltado</summary><pre id="syntax"></pre></details>
+    <h2>Cambios</h2>
+    <div id="changes"></div>
+  </section>
+  <section class="agent">
+    <h2>Agente</h2>
+    <label for="mode">Modo del modelo</label>
+    <select id="mode">
+      <option value="offline">Solo offline</option>
+      <option value="online">Solo online</option>
+      <option value="auto">Automático</option>
+    </select>
+    <label for="prompt">Petición de programación</label>
+    <textarea id="prompt" rows="5" placeholder="Describe el cambio o análisis"></textarea>
+    <fieldset>
+      <legend>Permisos para la próxima tarea</legend>
+      <label><input id="remote" type="checkbox"> Enviar petición y contexto al proveedor remoto configurado</label>
+      <label for="testing">Pruebas Python</label>
+      <select id="testing">
+        <option value="">Denegar</option>
+        <option value="isolated">Permitir con aislamiento Linux</option>
+        <option value="trusted">Permitir sin aislamiento en un proyecto confiable</option>
+      </select>
+    </fieldset>
+    <div class="controls">
+      <button id="start" type="button">Enviar</button>
+      <button id="cancel" type="button">Cancelar tarea</button>
+      <button id="test" type="button">Ejecutar pruebas</button>
+    </div>
+    <h2>Actividad e historial</h2>
+    <ol id="events"></ol>
+    <h2>Consola de pruebas</h2>
+    <pre id="console">Sin resultados.</pre>
+  </section>
+</main>
+</body>
+</html>
